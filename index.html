@@ -1,48 +1,58 @@
 <!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Live Teks dari Telegram</title>
-    <style>
-      body { font-family: system-ui, sans-serif; padding: 20px; background: #f7f7f8; }
-      .card { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,.1);}
-      .text { font-size: 28px; font-weight: 700; word-wrap: break-word; }
-      .meta { margin-top: 10px; color: #555; font-size: 14px; }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <div class="text" id="text">Memuat…</div>
-      <div class="meta" id="meta"></div>
-    </div>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Teks Telegram</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f0f2f5; margin:0; padding:0; }
+    header { padding: 24px; text-align:center; background:#4e73df; color:white; }
+    main { padding:16px; max-width:800px; margin:0 auto; }
+    .card { background:white; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    .sender { font-weight:700; color:#4e73df; }
+    .timestamp { font-size:12px; color:#888; margin-left:8px; }
+    .text { margin-top:8px; font-size:16px; word-wrap:break-word; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Live Teks Telegram</h1>
+    <p>Tampilan pesan terbaru secara real-time ✨</p>
+  </header>
+  <main id="messages"></main>
 
-    <script>
-      // Ganti ini dengan URL backend Railway kamu
-      const BACKEND_URL = "https://online-text-generator-2-production.up.railway.app";
+  <script>
+    const BACKEND_URL = "https://online-text-generator-2-production.up.railway.app"; // ganti sesuai Railway
+    const mainEl = document.getElementById("messages");
 
-      const textEl = document.getElementById("text");
-      const metaEl = document.getElementById("meta");
+    async function loadMessages() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/latest`, {cache:"no-store"});
+        const data = await res.json();
+        mainEl.innerHTML = "";
 
-      async function loadLatest() {
-        try {
-          const res = await fetch(`${BACKEND_URL}/latest`, { cache: "no-store" });
-          const data = await res.json();
-          textEl.textContent = data.text || "(Kosong)";
-          if (data.from && data.updated_at) {
-            const dt = new Date(data.updated_at);
-            metaEl.textContent = `Dari: ${data.from} • Diperbarui: ${dt.toLocaleString()}`;
-          } else {
-            metaEl.textContent = "";
-          }
-        } catch {
-          textEl.textContent = "(Gagal memuat data)";
-          metaEl.textContent = "";
-        }
+        data.reverse().forEach(msg => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const header = document.createElement("div");
+          header.innerHTML = `<span class="sender">${msg.from}</span><span class="timestamp">${new Date(msg.timestamp).toLocaleString("id-ID")}</span>`;
+          card.appendChild(header);
+
+          const text = document.createElement("div");
+          text.className = "text";
+          text.textContent = msg.text;
+          card.appendChild(text);
+
+          mainEl.appendChild(card);
+        });
+      } catch(err) {
+        mainEl.innerHTML = "<p>Gagal memuat data 😢</p>";
       }
+    }
 
-      loadLatest();
-      setInterval(loadLatest, 3000); // refresh tiap 3 detik
-    </script>
-  </body>
+    loadMessages();
+    setInterval(loadMessages, 3000); // refresh tiap 3 detik
+  </script>
+</body>
 </html>
